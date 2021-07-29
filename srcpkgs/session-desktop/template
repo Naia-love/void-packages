@@ -1,0 +1,51 @@
+# Template file for 'session-desktop'
+pkgname=session-desktop
+version=1.6.9
+revision=1
+# no 32bit support: discontinued Electron 32-bit support: https://www.electronjs.org/blog/linux-32bit-support
+# arm64 don't seems very stable for now and isn't officialy supported: https://github.com/oxen-io/session-desktop/issues/1635
+archs="x86_64"
+hostmakedepends="curl python yarn git git-lfs tar"
+depends="cairo gtk+3 libvips pango alsa-lib nss libXtst dbus-libs libnotify"
+short_desc="Session is an end-to-end encrypted messenger"
+maintainer="Naia-love <me@naia.gay>"
+license="GPL-3.0-or-later"
+homepage="https://getsession.org"
+distfiles="https://github.com/oxen-io/${pkgname}/archive/refs/tags/v${version}.tar.gz"
+checksum=4abf94eb2233a19687c9d87a7644d51eb7199ae0f04deba9647cbe4c7c0a3afa
+
+pre_build() {
+	# Session only support build with node 14.16.0
+	cd .. # for some reason nvm install crash if run in the pkg source folder
+	curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
+	export NVM_DIR="$HOME/.nvm"
+	[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+	nvm install 14.16.0
+
+	cd ${pkgname}-${version} # return to pkg source folder
+
+	git lfs install
+	yarn install --frozen-lockfile
+}
+
+do_build() {
+	yarn grunt --force
+	yarn generate
+	yarn build-release
+}
+
+do_install() {
+	vmkdir usr/lib/session-desktop
+
+	vcopy release/linux-unpacked/* usr/lib/session-desktop
+
+	vmkdir usr/bin
+	ln -s /usr/lib/session-desktop/session-desktop ${DESTDIR}/usr/bin/session
+	ln -s /usr/lib/session-desktop/session-desktop-bin ${DESTDIR}/usr/bin/
+
+	vmkdir usr/share/applications
+	vinstall ${FILESDIR}/session.desktop 644 usr/share/applications/
+
+	vmkdir usr/share/icons/hicolor
+	vinstall images/session/session_icon_1024.png 644 usr/share/icons/hicolor/1024x1024/apps/ session.png
+}

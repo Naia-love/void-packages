@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Session
+GenericName=Messenger
+Comment=Session is an end-to-end encrypted messenger.
+Icon=/usr/share/icons/hicolor/1024x1024/apps/session.png
+Exec=session
+Categories=Network;Messenger;
+StartupNotify=true
